@@ -1,7 +1,7 @@
 
-  # make sure to set your Docker Hub username & password in CircleCI,
-  # either as project-specific environment variables
-  # or as resources in your organization's org-global Context
+  # make sure to set your Docker org, username, pwd and nvidia key in 
+  # the CircleCI org-specific environment 
+  # also set the Docker Hub image name in the project-specific context
 
 version: 2
 jobs:
