@@ -54,10 +54,10 @@ RUN /opt/anaconda3/bin/pip install \
 #+#+#+#+#+#+#+#+#+#+#+#
 # Prepare Environment #
 #+#+#+#+#+#+#+#+#+#+#+#
-#COPY ./bash_profile /root/.bash_profile
-#RUN sh /root/.bash_profile
+COPY ./container-files/bash_profile /root/.bash_profile
+RUN sh /root/.bash_profile
 
-#COPY ./jupyter_notebook_config.py /root/
+COPY ./container-files/jupyter_notebook_config.py /root/
 RUN ls -alh /root/
 
 RUN mkdir /media/notebooks
