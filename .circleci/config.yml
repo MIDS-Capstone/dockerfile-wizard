@@ -1,7 +1,10 @@
+image_config: &image_config
 
-  # make sure to set your Docker org, username, pwd and nvidia key in 
-  # the CircleCI org-specific environment 
-  # also set the Docker Hub image name in the project-specific context
+    ENV_NAME: NVIDIA
+    
+# make sure to set your Docker org, username, pwd and nvidia key in 
+# the CircleCI org-specific environment 
+# also set the Docker Hub image name in the project-specific context
 
 version: 2
 jobs:
@@ -9,13 +12,12 @@ jobs:
     machine: 
         enabled: true
         docker_layer_caching: true
-        
-
+    environment:
+      <<: *image_config
+      
     steps:
       - checkout
       
-      # API Key:
-      #cWQxdW4ydmxnc2pvcnNtNW5rcTA0dnY0Yzk6MjQxMTc2ZjMtMDEyNi00NDk2LWFlZmYtMmYwMWRmODQ2ZTBi
       - run: docker login nvcr.io -u \$oauthtoken -p $NVIDIA_DOCKER_OAUTH_KEY
       - run: docker pull nvcr.io/nvidia/tensorflow:18.08-py3
       - run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
@@ -28,7 +30,9 @@ jobs:
   test_image:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH}
-
+        environment:
+          <<: *image_config
+          
     steps:
       - checkout
 
@@ -54,7 +58,9 @@ jobs:
   deploy_image:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH}
-
+        environment:
+          <<: *image_config
+          
     steps:
       - checkout
       
@@ -78,3 +84,4 @@ workflows:
           branches:
             only:
               - master
+
