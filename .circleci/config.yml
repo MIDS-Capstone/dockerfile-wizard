@@ -1,4 +1,3 @@
-image_config: &image_config
 
   # make sure to set your Docker Hub username & password in CircleCI,
   # either as project-specific environment variables
@@ -11,8 +10,6 @@ jobs:
         enabled: true
         docker_layer_caching: true
         
-    environment:
-      <<: *image_config
 
     steps:
       - checkout
@@ -31,8 +28,6 @@ jobs:
   test_image:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH}
-        environment:
-          <<: *image_config
 
     steps:
       - checkout
@@ -59,8 +54,6 @@ jobs:
   deploy_image:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH}
-        environment:
-          <<: *image_config
 
     steps:
       - checkout
