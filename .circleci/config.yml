@@ -4,7 +4,6 @@ jobs:
     machine: 
         enabled: true
 
-      
     steps:
       - checkout
       
@@ -49,7 +48,6 @@ jobs:
           
     steps:
       - checkout
-      
       
 workflows:
   version: 2
