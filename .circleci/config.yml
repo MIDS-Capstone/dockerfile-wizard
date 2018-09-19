@@ -22,9 +22,6 @@ jobs:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
           
-      - setup_remote_docker:
-          docker_layer_caching: true
-
     steps:
       - checkout
 
