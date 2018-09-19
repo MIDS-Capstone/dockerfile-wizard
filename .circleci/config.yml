@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  build-job:
     machine: 
         enabled: true
 
@@ -16,7 +16,7 @@ jobs:
       - store_artifacts:
           path: Dockerfile
 
-  test_image:
+  test-job:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:$CIRCLE_BRANCH
           
@@ -42,7 +42,7 @@ jobs:
       - store_artifacts:
           path: test_results
           
-  deploy_image:
+  deploy-job:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:$CIRCLE_BRANCH
           
@@ -51,21 +51,19 @@ jobs:
       
 workflows:
   version: 2
-  dockerfile_wizard:
-    jobs:
-      - build:
-          context: DOCKER_HUB
-
-      - test_image:
-          context: DOCKER_HUB
-          requires:
-            - build
-            
-      - deploy_image:
-          context: DOCKER_HUB
-          requires:
-            - test_image
-          branches:
-            only:
-              - master
+    build-test-deploy:
+      jobs:
+        - build-job:
+            context: DOCKER_HUB
+        - test-job:
+            context: DOCKER_HUB
+            requires:
+              - build-job
+        - deploy-job:
+            context: DOCKER_HUB
+            requires:
+              - test-job
+            branches:
+              only:
+                - master
 
