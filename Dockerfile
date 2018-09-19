@@ -25,6 +25,7 @@ RUN apt-get install -y --no-install-recommends \
         wget \
         xvfb
 		
+RUN yum install 'perl(XML::Generator)'
 RUN rm -rf /var/lib/apt/lists/
 
 RUN ppm install XML-Generator
