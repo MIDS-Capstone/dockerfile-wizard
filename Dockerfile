@@ -11,11 +11,15 @@ RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
         apt-utils \
         build-essential \
+	ca-certificates \
         bzip2 \
         cmake \
         curl \
         git \
+	gzip \
         libopenblas-dev \
+	ssh \
+	tar \
         unzip \
         vim \
         wget
