@@ -23,7 +23,8 @@ RUN apt-get install -y --no-install-recommends \
         unzip \
         vim \
         wget \
-        xvfb
+        xvfb \
+				yum
 		
 RUN yum install 'perl(XML::Generator)'
 RUN rm -rf /var/lib/apt/lists/
