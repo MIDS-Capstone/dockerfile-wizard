@@ -16,16 +16,18 @@ RUN apt-get install -y --no-install-recommends \
         cmake \
         curl \
         git \
-	gzip \
+        gzip \
         libopenblas-dev \
-	ssh \
-	tar \
+        ssh \
+        tar \
         unzip \
         vim \
-        wget
+        wget \
+        xvfb
 		
 RUN rm -rf /var/lib/apt/lists/
 
+RUN ppm install XML-Generator
 
 ##+#+#+#+#+#+#+#+#
 # Infrastructure #
