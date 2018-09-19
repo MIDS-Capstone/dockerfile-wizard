@@ -23,9 +23,9 @@ RUN apt-get install -y --no-install-recommends \
         unzip \
         vim \
         wget \
-        xvfb
+        xvfb \
+				libxml-generator-perl
 		
-RUN apt-get install 'perl(XML::Generator)'
 RUN rm -rf /var/lib/apt/lists/
 
 RUN ppm install XML-Generator
