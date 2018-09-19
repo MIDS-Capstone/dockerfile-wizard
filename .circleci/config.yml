@@ -2,11 +2,10 @@ version: 2
 jobs:
   build:
     machine: 
-        enabled: true
+      docker_layer_caching: true
 
     steps:
       - checkout
-      
       - run: docker login nvcr.io -u \$oauthtoken -p $NVIDIA_DOCKER_OAUTH_KEY
       - run: docker pull nvcr.io/nvidia/tensorflow:18.08-py3
       - run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
