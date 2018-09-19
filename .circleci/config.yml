@@ -1,19 +1,9 @@
-image_config: &image_config
-
-    ENV_NAME: NVIDIA
-    
-# make sure to set your Docker org, username, pwd and nvidia key in 
-# the CircleCI org-specific environment 
-# also set the Docker Hub image name in the project-specific context
-
 version: 2
 jobs:
   build:
     machine: 
         enabled: true
-        docker_layer_caching: true
-    environment:
-      <<: *image_config
+
       
     steps:
       - checkout
@@ -30,8 +20,6 @@ jobs:
   test_image:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH}
-        environment:
-          <<: *image_config
           
     steps:
       - checkout
@@ -58,8 +46,6 @@ jobs:
   deploy_image:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH}
-        environment:
-          <<: *image_config
           
     steps:
       - checkout
