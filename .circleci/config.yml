@@ -18,7 +18,10 @@ jobs:
   test:
     docker:
       - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:$CIRCLE_BRANCH
-          
+
+      - setup_remote_docker:
+          docker_layer_caching: true
+                    
     steps:
       - checkout
 
