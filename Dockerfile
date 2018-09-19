@@ -11,7 +11,7 @@ RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
         apt-utils \
         build-essential \
-	ca-certificates \
+				ca-certificates \
         bzip2 \
         cmake \
         curl \
@@ -29,9 +29,16 @@ RUN apt-get install -y --no-install-recommends \
 RUN rm -rf /var/lib/apt/lists/
 
 ##+#+#+#+#+#+#+#+#
-# Infrastructure #
+# Infrastructure 
 ##+#+#+#+#+#+#+#+#
 
+# install dockerize
+RUN DOCKERIZE_URL="https://circle-downloads.s3.amazonaws.com/circleci-images/cache/linux-amd64/dockerize-latest.tar.gz" \
+  && curl --silent --show-error --location --fail --retry 3 --output /tmp/dockerize-linux-amd64.tar.gz $DOCKERIZE_URL \
+  && tar -C /usr/local/bin -xzvf /tmp/dockerize-linux-amd64.tar.gz \
+  && rm -rf /tmp/dockerize-linux-amd64.tar.gz \
+  && dockerize --version
+	
 ##############
 # Update PIP #
 ##############
@@ -50,8 +57,7 @@ RUN pip install \
     scikit-learn \
     jupyter \
     jupyterlab \
-    theano \ 
-#    pytorch \
+    theano \
     keras \
     imutils \
     pillow \
