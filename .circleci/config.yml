@@ -10,15 +10,15 @@ jobs:
       - run: docker login nvcr.io -u \$oauthtoken -p $NVIDIA_DOCKER_OAUTH_KEY
       - run: docker pull nvcr.io/nvidia/tensorflow:18.08-py3
       - run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-      - run: docker build -t $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH} .
-      - run: docker push $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH} && sleep 10
+      - run: docker build -t $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:$CIRCLE_BRANCH .
+      - run: docker push $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:$CIRCLE_BRANCH && sleep 10
 
       - store_artifacts:
           path: Dockerfile
 
   test_image:
     docker:
-      - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH}
+      - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:$CIRCLE_BRANCH
           
     steps:
       - checkout
@@ -44,7 +44,7 @@ jobs:
           
   deploy_image:
     docker:
-      - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:${CIRCLE_BRANCH}
+      - image: $DOCKER_ORGANIZATION/$DOCKER_IMAGE_NAME:$CIRCLE_BRANCH
           
     steps:
       - checkout
