@@ -57,6 +57,14 @@ RUN pip install \
     pillow \
     lxml
 	
+
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+# Install BATS for testing  #
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+RUN git clone https://github.com/bats-core/bats-core &&\
+		cd bats-core &&\
+		./install.sh /usr/local
+	
 #+#+#+#+#+#+#+#+#+#+#+#
 # Prepare Environment #
 #+#+#+#+#+#+#+#+#+#+#+#
