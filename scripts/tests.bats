@@ -4,15 +4,7 @@
 
 @test "python version" {
 
-  if [[ $PYTHON_VERSION_NUM < "3.4" ]] ; then
-    if [[ $PYTHON_VERSION_NUM < "3" ]] ; then
-      python --version 2>&1 | grep $PYTHON_VERSION_NUM
-    else
-      python3 --version 2>&1 | grep $PYTHON_VERSION_NUM
-    fi
-  else
-    python3 --version | grep $PYTHON_VERSION_NUM
-  fi
+  python --version | grep -i $PYTHON_VERSION
 }
 
 @test "dockerize" {
