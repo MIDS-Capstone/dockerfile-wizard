@@ -2,11 +2,15 @@ version: 2
 
 jobs:
   build:
+    docker:
+      - image: google/cloud-sdk@sha256:126a49cfa2aa6e20d561fa14999bf657bc341efeba04939bd2f612bf843d12a6
+    
     machine: 
       docker_layer_caching: true
 
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: Generate full image name for new docker image
           command: |
@@ -101,7 +105,7 @@ jobs:
       - run:
           name: Deploy
           command: |
-            echo $GCLOUD_SERVICE_KEY | base64 --decode --ignore-garbage > gcloud-service-key.json
+            echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
             set -x
             gcloud auth activate-service-account --key-file gcloud-service-key.json
             gcloud --quiet config set project $GOOGLE_PROJECT_ID
