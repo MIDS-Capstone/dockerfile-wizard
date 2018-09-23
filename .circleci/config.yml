@@ -99,12 +99,6 @@ jobs:
           at: workspace
 
       - run:
-          name: Install utils
-          command: |
-            apt-get update
-            apt-get install jq
-
-      - run:
           name: Deploy
           command: |
             echo $GCLOUD_SERVICE_KEY | base64 --decode --ignore-garbage > gcloud-service-key.json
