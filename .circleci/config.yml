@@ -193,7 +193,7 @@ jobs:
             sleep 60
             kubectl get service $APP_NAME
             EXTERNAL_IP=$(kubectl get service $APP_NAME -o json | jq -r ".status.loadBalancer.ingress[0].ip")
-            curl "http://$EXTERNAL_IP"
+            curl "http://$EXTERNAL_IP:8888"
 
       - run:
           name: Tear down applications and resources if configured (since this is a demo)

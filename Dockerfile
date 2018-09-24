@@ -83,5 +83,8 @@ RUN mkdir /.local && chmod a+rwx /.local
 WORKDIR /media/notebooks
 EXPOSE 8888
 
-CMD [jupyter notebook --notebook-dir=/media/notebooks --no-browser --allow-root --port=8888"]
+#+#+#+#+#+#+#+#+#+#+#+#
+# Startup script #
+#+#+#+#+#+#+#+#+#+#+#+#
+COPY ./container-files/startup.sh ./
 
