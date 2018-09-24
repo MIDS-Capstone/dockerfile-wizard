@@ -95,7 +95,7 @@ jobs:
           key: source-v1-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
-            - "./tracking'
+            - "./tracking"
 
       - store_artifacts:
           path: Dockerfile
