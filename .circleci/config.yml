@@ -15,12 +15,12 @@ jobs:
             - source-v1-{{ .Branch }}-
             - source-v1-
 
+      - checkout
+      
       - restore_cache:
           keys:
             - docker_images
                         
-      - checkout
-      
       - setup_remote_docker
       - run:
           name: Generate full image name for new docker image
