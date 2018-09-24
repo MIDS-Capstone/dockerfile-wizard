@@ -43,6 +43,7 @@ jobs:
       - run:
           name: Push image to docker-hub
           command: |
+            FULL_DOCKER_IMAGE_NAME=$(cat full_docker_image_name)
             docker push $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME && sleep 10
             
       - run:
