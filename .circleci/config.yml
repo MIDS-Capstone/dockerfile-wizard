@@ -44,6 +44,7 @@ jobs:
             
             file="./docker_images/$NVIDIA_IMAGE_NAME.tar"
             if [ -e "$file" ]; then
+                echo "$NVIDIA_IMAGE_NAME exists in the local cache, loading tar file"
                 docker load -i "$file"
             else 
                 echo "$NVIDIA_IMAGE_NAME does not exist, pulling from source"
@@ -80,7 +81,7 @@ jobs:
               echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
               gcloud auth activate-service-account --key-file gcloud-service-key.json
               gcloud --quiet auth configure-docker
-              docker tag $FULL_DOCKER_IMAGE_NAME $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
+              docker tag $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
               docker push $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
             else
               echo "Skipping image push to GCP.."
