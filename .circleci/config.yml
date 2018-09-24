@@ -25,6 +25,7 @@ jobs:
       - run:
           name: Generate full image name for new docker image
           command: |
+            mkdir tracking
             set -x
             if [ "${CIRCLE_BRANCH}" == "master" ]
             then
@@ -32,14 +33,14 @@ jobs:
             else
               DOCKER_IMAGE_TAG=${CIRCLE_BRANCH}
             fi
-            echo "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG" > full_docker_image_name
-            echo "$DOCKER_IMAGE_TAG" > full_docker_image_tag
+            echo "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG" > ./tracking/full_docker_image_name
+            echo "$DOCKER_IMAGE_TAG" > ./tracking/full_docker_image_tag
             
       - run:
           name: Get image from NVIDIA (or from cache directory)
           command: |
             mkdir -p ./docker_images
-            FULL_DOCKER_IMAGE_NAME=$(cat full_docker_image_name)
+            FULL_DOCKER_IMAGE_NAME=$(cat ./tracking/full_docker_image_name)
             docker login nvcr.io -u \$oauthtoken -p $NVIDIA_DOCKER_OAUTH_KEY
             
             file="./docker_images/$NVIDIA_IMAGE_NAME.tar"
@@ -60,14 +61,14 @@ jobs:
       - run:
           name: Build docker image
           command: |
-            FULL_DOCKER_IMAGE_NAME=$(cat full_docker_image_name)
+            FULL_DOCKER_IMAGE_NAME=$(cat ./tracking/full_docker_image_name)
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
             docker build -t $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME .
 
       - run:
           name: Push image to docker-hub
           command: |
-            FULL_DOCKER_IMAGE_NAME=$(cat full_docker_image_name)
+            FULL_DOCKER_IMAGE_NAME=$(cat ./tracking/full_docker_image_name)
             docker push $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME && sleep 10
             
       - run:
@@ -76,9 +77,9 @@ jobs:
           command: |
             if [ "$DEPLOY_GCP" == "true" ]
             then
-              FULL_DOCKER_IMAGE_NAME=$(cat full_docker_image_name)
-              FULL_DOCKER_IMAGE_TAG=$(cat full_docker_image_tag)
-              echo $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG > full_gcp_docker_image_name
+              FULL_DOCKER_IMAGE_NAME=$(cat ./tracking/full_docker_image_name)
+              FULL_DOCKER_IMAGE_TAG=$(cat ./tracking/full_docker_image_tag)
+              echo $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG > ./tracking/full_gcp_docker_image_name
               echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
               
               gcloud auth activate-service-account --key-file gcloud-service-key.json
@@ -94,6 +95,7 @@ jobs:
           key: source-v1-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
+            - "./tracking'
 
       - store_artifacts:
           path: Dockerfile
@@ -125,13 +127,15 @@ jobs:
             if [ "$DEPLOY_GCP" == "true" ]
             then
                 echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
-                FULL_GCP_IMAGE_NAME=$(cat full_gcp_docker_image_name)
+                FULL_GCP_IMAGE_NAME=$(cat ./tracking/full_gcp_docker_image_name)
                 
                 set -x
                 gcloud auth activate-service-account --key-file gcloud-service-key.json
                 gcloud --quiet config set project $GOOGLE_PROJECT_ID
                 gcloud --quiet config set compute/zone $GOOGLE_COMPUTE_ZONE
+                
                 EXISTING_CLUSTER=$(gcloud container clusters list --format="value(name)" --filter="name=$GOOGLE_CLUSTER_NAME")
+                
                 if [ "${EXISTING_CLUSTER}" != $GOOGLE_CLUSTER_NAME ]
                 then
                   # Create cluster if it doesn't already exist
@@ -143,6 +147,7 @@ jobs:
                 # Replace DOCKER_IMAGE_NAME placeholder in manifest with actual image name
                 KUBE_CONFIG=$(cat ./manifests/app.yaml.template | sed "s|APP_NAME|$APP_NAME|g" | sed "s|DOCKER_IMAGE_NAME|$FULL_GCP_IMAGE_NAME|g")
                 echo "$KUBE_CONFIG" | kubectl apply -f -
+                
                 # Wait for deployment to finish
                 kubectl rollout status deployment/$APP_NAME
                 kubectl get pods
