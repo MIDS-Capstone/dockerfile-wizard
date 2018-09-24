@@ -29,11 +29,11 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "master" ]
             then
               DOCKER_IMAGE_TAG=v${CIRCLE_BUILD_NUM}
-              echo "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG" > full_docker_image_name
             else
               DOCKER_IMAGE_TAG=${CIRCLE_BRANCH}
-              echo "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG" > full_docker_image_name
             fi
+            echo "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG" > full_docker_image_name
+            echo "$DOCKER_IMAGE_TAG" > full_docker_image_tag
             
       - run:
           name: Get image from NVIDIA (or from cache directory)
@@ -50,6 +50,11 @@ jobs:
                 docker pull "nvcr.io/nvidia/$NVIDIA_IMAGE_NAME"
                 docker save "nvcr.io/nvidia/$NVIDIA_IMAGE_NAME" > $file
             fi 
+            
+      - save_cache:
+          key: docker_images
+          paths:
+            - "./docker_images"
             
       - run:
           name: Build docker image
@@ -71,10 +76,12 @@ jobs:
             if [ "$DEPLOY_GCP" == "true" ]
             then
               FULL_DOCKER_IMAGE_NAME=$(cat full_docker_image_name)
+              FULL_DOCKER_IMAGE_TAG=$(cat full_docker_image_tag)
               echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
               gcloud auth activate-service-account --key-file gcloud-service-key.json
               gcloud --quiet auth configure-docker
-              docker push $FULL_DOCKER_IMAGE_NAME
+              docker tag $FULL_DOCKER_IMAGE_NAME $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
+              docker push $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
             else
               echo "Skipping image push to GCP.."
             fi
@@ -83,12 +90,7 @@ jobs:
           key: source-v1-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
-            
-      - save_cache:
-          key: docker_images
-          paths:
-            - "./docker_images"
-            
+
       - store_artifacts:
           path: Dockerfile
           
