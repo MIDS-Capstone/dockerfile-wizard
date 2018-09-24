@@ -14,7 +14,11 @@ jobs:
             - source-v1-{{ .Branch }}-{{ .Revision }}
             - source-v1-{{ .Branch }}-
             - source-v1-
-            
+
+      - restore_cache:
+          keys:
+            - docker_files
+                        
       - checkout
       
       - setup_remote_docker
@@ -36,7 +40,16 @@ jobs:
           command: |
             FULL_DOCKER_IMAGE_NAME=$(cat full_docker_image_name)
             docker login nvcr.io -u \$oauthtoken -p $NVIDIA_DOCKER_OAUTH_KEY
-            docker pull nvcr.io/nvidia/tensorflow:18.08-py3
+            
+            file="./docker_images/$NVIDIA_IMAGE_NANE.tar"
+            if [ -e "$file" ]; then
+                docker load "$file"
+            else 
+                echo "$NVIDIA_IMAGE_NAME does not exist, pulling from source"
+                docker pull "nvcr.io/nvidia/$NVIDIA_IMAGE_NAME"
+                docker save "nvidia/$NVIDIA_IMAGE_NAME" > $file
+            fi 
+            
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
             docker build -t $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME .
             
@@ -65,7 +78,13 @@ jobs:
           key: source-v1-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
-           
+            - "./docker_files"
+            
+      - save_cache:
+          key: docker_files
+          paths:
+            - "./docker_files"
+
       - store_artifacts:
           path: Dockerfile
           
