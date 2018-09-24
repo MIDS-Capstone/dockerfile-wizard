@@ -181,7 +181,7 @@ jobs:
                 kubectl rollout status deployment/$APP_NAME
                 kubectl get pods
             else
-              echo "Skipping deploy to GCP k8.."
+              echo "Skipping deploy to GCP k8..."
             fi
             
 
