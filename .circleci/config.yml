@@ -44,7 +44,7 @@ jobs:
             
             file="./docker_images/$NVIDIA_IMAGE_NAME.tar"
             if [ -e "$file" ]; then
-                docker load "$file"
+                docker load -o "$file"
             else 
                 echo "$NVIDIA_IMAGE_NAME does not exist, pulling from source"
                 docker pull "nvcr.io/nvidia/$NVIDIA_IMAGE_NAME"
