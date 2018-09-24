@@ -22,6 +22,7 @@ jobs:
             - docker_images
                         
       - setup_remote_docker
+      
       - run:
           name: Generate full image name for new docker image
           command: |
@@ -95,7 +96,6 @@ jobs:
           key: source-v1-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
-            - "./tracking"
 
       - store_artifacts:
           path: Dockerfile
@@ -103,7 +103,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - full_docker_image_name
+            - ./tracking
 
   deploy:
     <<: *defaults
