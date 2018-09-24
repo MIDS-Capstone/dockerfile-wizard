@@ -48,7 +48,7 @@ jobs:
             else 
                 echo "$NVIDIA_IMAGE_NAME does not exist, pulling from source"
                 docker pull "nvcr.io/nvidia/$NVIDIA_IMAGE_NAME"
-                docker save "nvidia/$NVIDIA_IMAGE_NAME" > $file
+                docker save "nvcr.io/nvidia/$NVIDIA_IMAGE_NAME" > $file
             fi 
             
       - run:
