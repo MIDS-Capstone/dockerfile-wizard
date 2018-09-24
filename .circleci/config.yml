@@ -78,9 +78,12 @@ jobs:
             then
               FULL_DOCKER_IMAGE_NAME=$(cat full_docker_image_name)
               FULL_DOCKER_IMAGE_TAG=$(cat full_docker_image_tag)
+              echo $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG > full_gcp_docker_image_name
               echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
+              
               gcloud auth activate-service-account --key-file gcloud-service-key.json
               gcloud --quiet auth configure-docker
+              
               docker tag $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
               docker push $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
             else
@@ -99,46 +102,6 @@ jobs:
           root: .
           paths:
             - full_docker_image_name
-
-  test:
-    docker:
-      - image: $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-
-    steps:
-
-      - restore_cache:
-          keys:
-            - source-v1-{{ .Branch }}-{{ .Revision }}
-            - source-v1-{{ .Branch }}-
-            - source-v1-
-                
-      
-      - checkout
-      
-      - attach_workspace:
-          at: workspace
-
-      - run:
-          name: start Xvfb for phantomjs test
-          command: Xvfb :99
-          background: true
-
-      - run:
-          name: bats tests
-          command: |
-            mkdir -p test_results/bats
-            bats scripts/tests.bats | \
-            perl scripts/tap-to-junit.sh > \
-            test_results/bats/results.xml
-
-      - store_test_results:
-          path: test_results
-
-      - store_artifacts:
-          path: test_results
 
   deploy:
     <<: *defaults
@@ -162,6 +125,8 @@ jobs:
             if [ "$DEPLOY_GCP" == "true" ]
             then
                 echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
+                FULL_GCP_IMAGE_NAME=$(cat full_gcp_docker_image_name)
+                
                 set -x
                 gcloud auth activate-service-account --key-file gcloud-service-key.json
                 gcloud --quiet config set project $GOOGLE_PROJECT_ID
@@ -174,9 +139,9 @@ jobs:
                 else
                   gcloud --quiet container clusters get-credentials $GOOGLE_CLUSTER_NAME
                 fi
-                FULL_DOCKER_IMAGE_NAME=$(cat workspace/full_docker_image_name)
+                
                 # Replace DOCKER_IMAGE_NAME placeholder in manifest with actual image name
-                KUBE_CONFIG=$(cat ./manifests/app.yaml.template | sed "s|APP_NAME|$APP_NAME|g" | sed "s|DOCKER_IMAGE_NAME|$FULL_DOCKER_IMAGE_NAME|g")
+                KUBE_CONFIG=$(cat ./manifests/app.yaml.template | sed "s|APP_NAME|$APP_NAME|g" | sed "s|DOCKER_IMAGE_NAME|$FULL_GCP_IMAGE_NAME|g")
                 echo "$KUBE_CONFIG" | kubectl apply -f -
                 # Wait for deployment to finish
                 kubectl rollout status deployment/$APP_NAME
@@ -214,10 +179,6 @@ workflows:
     jobs:
       - build:
           context: DOCKER_HUB
-      - test:
-          context: DOCKER_HUB
-          requires:
-            - build
       - deploy:
           requires:
             - build
