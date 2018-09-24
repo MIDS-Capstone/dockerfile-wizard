@@ -103,7 +103,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - ./tracking
+            - "./tracking"
 
   deploy:
     <<: *defaults
