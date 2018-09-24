@@ -195,7 +195,7 @@ jobs:
             curl "http://$EXTERNAL_IP"
 
       - run:
-          name: Tear down application and resources if configured (since this is a demo)
+          name: Tear down applications and resources if configured (since this is a demo)
           command: |
             if [ "$DEPLOY_GCP" == "true" ]
             then
