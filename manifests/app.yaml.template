@@ -29,6 +29,6 @@ spec:
       containers:
       - name: APP_NAME
         image: DOCKER_IMAGE_NAME
-        command: ['/bin/sh', './startup.sh']
+        command: ['/bin/sh', './root/startup.sh']
         ports:
         - containerPort: 8888

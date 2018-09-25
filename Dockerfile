@@ -40,13 +40,13 @@ RUN DOCKERIZE_URL="https://circle-downloads.s3.amazonaws.com/circleci-images/cac
   && tar -C /usr/local/bin -xzvf /tmp/dockerize-linux-amd64.tar.gz \
   && rm -rf /tmp/dockerize-linux-amd64.tar.gz \
   && dockerize --version
-	
+
 
 #############################
 # Install BATS for testing  #
 #############################
-RUN git clone https://github.com/bats-core/bats-core &&\
-		cd bats-core &&\
+RUN git clone https://github.com/bats-core/bats-core && \
+		cd bats-core && \
 		./install.sh /usr/local
 
 
@@ -70,14 +70,7 @@ RUN pip install --upgrade pip && \
     pillow \
     lxml
 
-#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
-# Install BATS for testing  #
-#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
-RUN git clone https://github.com/bats-core/bats-core &&\
-		cd bats-core &&\
-		./install.sh /usr/local
-	
-
+		
 #+#+#+#+#+#+#+#+#+#+#+#
 # Prepare Environment #
 #+#+#+#+#+#+#+#+#+#+#+#
@@ -94,5 +87,5 @@ EXPOSE 8888
 #+#+#+#+#+#+#+#+#+#+#+#
 # Startup script #
 #+#+#+#+#+#+#+#+#+#+#+#
-COPY ./container-files/startup.sh ./
+COPY ./container-files/startup.sh ./root
 
