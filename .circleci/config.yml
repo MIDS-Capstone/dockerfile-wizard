@@ -1,72 +1,212 @@
-image_config: &image_config
-
-  # make sure to set your Docker Hub username & password in CircleCI,
-  # either as project-specific environment variables
-  # or as resources in your organization's org-global Context
-
-  DOCKER_ORGANIZATION: midscapstone
-  IMAGE_NAME: deep_learning_nvidia
-  IMAGE_TAG: gpu
-
 version: 2
+defaults: &defaults
+  docker:
+    - image: google/cloud-sdk:latest
+      
 jobs:
   build:
-    machine: 
-        docker_layer_caching: true
-    environment:
-      <<: *image_config
-
+    <<: *defaults
+    
     steps:
-      - checkout
+    
+      - restore_cache:
+          keys:
+            - source-v1-{{ .Branch }}-{{ .Revision }}
+            - source-v1-{{ .Branch }}-
+            - source-v1-
 
-      # API Key:
-      #cWQxdW4ydmxnc2pvcnNtNW5rcTA0dnY0Yzk6MjQxMTc2ZjMtMDEyNi00NDk2LWFlZmYtMmYwMWRmODQ2ZTBi
-      - run: docker login nvcr.io -u \$oauthtoken -p $NVIDIA_DOCKER_OAUTH_KEY
-      - run: docker pull nvcr.io/nvidia/tensorflow:18.08-py3
+      - checkout
       
-      - run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-      - run: docker build -t $DOCKER_ORGANIZATION/$IMAGE_NAME:$IMAGE_TAG .
-      - run: docker push $DOCKER_ORGANIZATION/$IMAGE_NAME:$IMAGE_TAG && sleep 10
+      - restore_cache:
+          keys:
+            - docker_images
+                        
+      - setup_remote_docker
+      
+      - run:
+          name: Generate full image name for new docker image
+          command: |
+            rm -rf tracking
+            mkdir tracking
+            
+            set -x
+            if [ "${CIRCLE_BRANCH}" == "master" ]
+            then
+              DOCKER_IMAGE_TAG=v${CIRCLE_BUILD_NUM}
+            else
+              DOCKER_IMAGE_TAG=${CIRCLE_BRANCH}
+            fi
+            echo "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG" > ./tracking/full_docker_image_name
+            echo "$DOCKER_IMAGE_TAG" > ./tracking/full_docker_image_tag
+            
+      - run:
+          name: Get image from NVIDIA (or from cache directory)
+          command: |
+            mkdir -p ./docker_images
+            FULL_DOCKER_IMAGE_NAME=$(cat ./tracking/full_docker_image_name)
+            docker login nvcr.io -u \$oauthtoken -p $NVIDIA_DOCKER_OAUTH_KEY
+            
+            file="./docker_images/$NVIDIA_IMAGE_NAME.tar"
+            if [ -e "$file" ]; then
+                echo "$NVIDIA_IMAGE_NAME exists in the local cache, loading tar file"
+                docker load -i "$file"
+            else 
+                echo "$NVIDIA_IMAGE_NAME does not exist, pulling from source"
+                docker pull "nvcr.io/nvidia/$NVIDIA_IMAGE_NAME"
+                docker save "nvcr.io/nvidia/$NVIDIA_IMAGE_NAME" > $file
+            fi 
+            
+      - save_cache:
+          key: docker_images
+          paths:
+            - "./docker_images"
+            
+      - run:
+          name: Build docker image
+          command: |
+            FULL_DOCKER_IMAGE_NAME=$(cat ./tracking/full_docker_image_name)
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker build -t $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME .
+
+      - run:
+          name: Push image to docker-hub
+          command: |
+            FULL_DOCKER_IMAGE_NAME=$(cat ./tracking/full_docker_image_name)
+            docker push $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME && sleep 10
+            
+      - run:
+          name: Push image to GCP
+          # Removed from making $GCLOUD_SERVICE_KEY | base64 --decode --ignore-garbage 
+          command: |
+            if [ "$DEPLOY_GCP" == "true" ]
+            then
+              FULL_DOCKER_IMAGE_NAME=$(cat ./tracking/full_docker_image_name)
+              FULL_DOCKER_IMAGE_TAG=$(cat ./tracking/full_docker_image_tag)
+              echo $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG > ./tracking/full_gcp_docker_image_name
+              echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
+              
+              gcloud auth activate-service-account --key-file gcloud-service-key.json
+              gcloud --quiet auth configure-docker
+              
+              docker tag $DOCKER_ORGANIZATION/$FULL_DOCKER_IMAGE_NAME $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
+              docker push $GOOGLE_ORGANIZATION/$GOOGLE_PROJECT_ID/$DOCKER_IMAGE_NAME:$FULL_DOCKER_IMAGE_TAG
+            else
+              echo "Skipping image push to GCP.."
+            fi
+            
+      - save_cache:
+          key: source-v1-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
 
       - store_artifacts:
           path: Dockerfile
+          
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "./tracking"
 
-  test_image:
-    docker:
-      - image: $DOCKER_ORGANIZATION/$IMAGE_NAME:$IMAGE_TAG
-        environment:
-          <<: *image_config
-
+  deploy:
+    <<: *defaults
+    
     steps:
+    
+      - restore_cache:
+          keys:
+            - source-v1-{{ .Branch }}-{{ .Revision }}
+            - source-v1-{{ .Branch }}-
+            - source-v1-
+                
       - checkout
 
-      - run:
-          name: start Xvfb for phantomjs test
-          command: Xvfb :99
-          background: true
+      - attach_workspace:
+          at: .
 
       - run:
-          name: bats tests
+          name: Deploy to GCP
           command: |
-            mkdir -p test_results/bats
-            bats scripts/tests.bats | \
-            perl scripts/tap-to-junit.sh > \
-            test_results/bats/results.xml
-
-      - store_test_results:
-          path: test_results
-
-      - store_artifacts:
-          path: test_results
+            if [ "$DEPLOY_GCP" == "true" ]
+            then
+                echo $GCLOUD_SERVICE_KEY > gcloud-service-key.json
+                FULL_GCP_IMAGE_NAME=$(cat ./tracking/full_gcp_docker_image_name)
+                
+                set -x
+                gcloud auth activate-service-account --key-file gcloud-service-key.json
+                gcloud --quiet config set project $GOOGLE_PROJECT_ID
+                gcloud --quiet config set compute/zone $GOOGLE_COMPUTE_ZONE
+                
+                EXISTING_CLUSTER=$(gcloud container clusters list --format="value(name)" --filter="name=$GOOGLE_CLUSTER_NAME")
+                
+                if [ "${EXISTING_CLUSTER}" != $GOOGLE_CLUSTER_NAME ]
+                then
+                  # Create cluster if it doesn't already exist
+                  gcloud --quiet container clusters create $GOOGLE_CLUSTER_NAME --num-nodes=1
+                else
+                  gcloud --quiet container clusters get-credentials $GOOGLE_CLUSTER_NAME
+                fi
+                
+                # Replace DOCKER_IMAGE_NAME placeholder in manifest with actual image name
+                KUBE_CONFIG=$(cat ./manifests/app.yaml.template | sed "s|APP_NAME|$APP_NAME|g" | sed "s|DOCKER_IMAGE_NAME|$FULL_GCP_IMAGE_NAME|g")
+                echo "$KUBE_CONFIG" | kubectl apply -f -
+                
+                # Wait for deployment to finish
+                kubectl rollout status deployment/$APP_NAME
+                kubectl get pods
+            else
+              echo "Skipping deploy to GCP k8..."
+            fi
+            
+      - run:
+          name: Install any testing dependencies
+          command: |
+            apt-get install --yes jq
+            apt-get install --yes wget
+            
+      - run:
+          name: Test deployed application on GCP
+          command: |
+            if [ "$DEPLOY_GCP" == "true" ]
+            then
+                # Wait for external ip to be assigned
+                sleep 60
+                kubectl get service $APP_NAME
+                EXTERNAL_IP=$(kubectl get service $APP_NAME -o json | jq -r ".status.loadBalancer.ingress[0].ip")
+                # get index.html
+                wget "http://$EXTERNAL_IP:8888" 
+                if [ -e "index.html" ]; then
+                    echo "http://$EXTERNAL_IP:8888 is up and serving requests"
+                    WEBSITE_STATUS="up"
+                else 
+                    echo "http://$EXTERNAL_IP:8888 is down, script aborting"
+                    WEBSITE_STATUS="down"
+                    exit 1;
+                fi 
+            fi
+      - run:
+          name: Tear down applications and resources if configured
+          command: |
+            if [ "$DEPLOY_GCP" == "true" ]
+            then
+                if [ "${DELETE_CLUSTER_AT_END_OF_BUILD}" == "true" ]
+                then
+                  kubectl delete service $APP_NAME
+                  gcloud --quiet container clusters delete $GOOGLE_CLUSTER_NAME
+                fi
+            fi
+            
+          when: always
 
 workflows:
   version: 2
-  dockerfile_wizard:
+  build_test:
     jobs:
       - build:
           context: DOCKER_HUB
-
-      - test_image:
-          context: DOCKER_HUB
+      - deploy:
           requires:
             - build
+          filters:
+            branches:
+              only: fb-ss-k8-cluster-deploy
+

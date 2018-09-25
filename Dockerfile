@@ -23,12 +23,13 @@ RUN apt-get install -y --no-install-recommends \
         unzip \
         vim \
         wget \
-	libxml-generator-perl
-
+        xvfb \
+        libxml-generator-perl
+		
 RUN rm -rf /var/lib/apt/lists/
 
 ##+#+#+#+#+#+#+#+#
-# Infrastructure #
+# Infrastructure 
 ##+#+#+#+#+#+#+#+#
 
 #####################
@@ -39,6 +40,7 @@ RUN DOCKERIZE_URL="https://circle-downloads.s3.amazonaws.com/circleci-images/cac
   && tar -C /usr/local/bin -xzvf /tmp/dockerize-linux-amd64.tar.gz \
   && rm -rf /tmp/dockerize-linux-amd64.tar.gz \
   && dockerize --version
+	
 
 #############################
 # Install BATS for testing  #
@@ -68,6 +70,13 @@ RUN pip install --upgrade pip && \
     pillow \
     lxml
 
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+# Install BATS for testing  #
+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
+RUN git clone https://github.com/bats-core/bats-core &&\
+		cd bats-core &&\
+		./install.sh /usr/local
+	
 
 #+#+#+#+#+#+#+#+#+#+#+#
 # Prepare Environment #
@@ -80,4 +89,10 @@ RUN mkdir /media/notebooks && chmod a+rwx /media/notebooks
 RUN mkdir /.local && chmod a+rwx /.local
 WORKDIR /media/notebooks
 EXPOSE 8888
+
+
+#+#+#+#+#+#+#+#+#+#+#+#
+# Startup script #
+#+#+#+#+#+#+#+#+#+#+#+#
+COPY ./container-files/startup.sh ./
 

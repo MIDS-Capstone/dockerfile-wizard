@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: APP_NAME
+  labels:
+    app: APP_NAME
+spec:
+  selector:
+    app: APP_NAME
+    tier: web
+  ports:
+  - port: 8888
+    targetPort: 8888
+  type: LoadBalancer
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: APP_NAME
+  labels:
+    app: APP_NAME
+spec:
+  template:
+    metadata:
+      labels:
+        app: APP_NAME
+        tier: web
+    spec:
+      containers:
+      - name: APP_NAME
+        image: DOCKER_IMAGE_NAME
+        command: ['/bin/sh', './startup.sh']
+        ports:
+        - containerPort: 8888
