@@ -121,7 +121,7 @@ jobs:
       - checkout
 
       - attach_workspace:
-          at: workspace
+          at: .
 
       - run:
           name: Deploy to GCP
