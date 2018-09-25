@@ -11,7 +11,7 @@ RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
         apt-utils \
         build-essential \
-				ca-certificates \
+        ca-certificates \
         bzip2 \
         cmake \
         curl \
@@ -24,7 +24,7 @@ RUN apt-get install -y --no-install-recommends \
         vim \
         wget \
         xvfb \
-				libxml-generator-perl
+        libxml-generator-perl
 		
 RUN rm -rf /var/lib/apt/lists/
 
@@ -32,28 +32,35 @@ RUN rm -rf /var/lib/apt/lists/
 # Infrastructure 
 ##+#+#+#+#+#+#+#+#
 
-# install dockerize
+#####################
+# Install Dockerize #
+#####################
 RUN DOCKERIZE_URL="https://circle-downloads.s3.amazonaws.com/circleci-images/cache/linux-amd64/dockerize-latest.tar.gz" \
   && curl --silent --show-error --location --fail --retry 3 --output /tmp/dockerize-linux-amd64.tar.gz $DOCKERIZE_URL \
   && tar -C /usr/local/bin -xzvf /tmp/dockerize-linux-amd64.tar.gz \
   && rm -rf /tmp/dockerize-linux-amd64.tar.gz \
   && dockerize --version
-	
-##############
-# Update PIP #
-##############
-RUN pip install --upgrade pip
 
-###########################
-# Install Python Packages #
-###########################
-RUN pip install \
-    numpy==1.15.1 \
-    scipy==1.1.0 \
-    pandas==0.23.4 \
-    pipenv==2018.7.1 \
+
+#############################
+# Install BATS for testing  #
+#############################
+RUN git clone https://github.com/bats-core/bats-core && \
+		cd bats-core && \
+		./install.sh /usr/local
+
+
+#########################################
+# Update pip & Install Python Packages #
+########################################
+RUN pip install --upgrade pip && \
+    pip install \
+    numpy \
+    scipy \
+    pandas \
+    pipenv \
     pipenv-tools \
-    virtualenv==16.0.0 \
+    virtualenv \
     scikit-learn \
     jupyter \
     jupyterlab \
@@ -62,15 +69,8 @@ RUN pip install \
     imutils \
     pillow \
     lxml
-	
 
-#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
-# Install BATS for testing  #
-#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
-RUN git clone https://github.com/bats-core/bats-core &&\
-		cd bats-core &&\
-		./install.sh /usr/local
-	
+		
 #+#+#+#+#+#+#+#+#+#+#+#
 # Prepare Environment #
 #+#+#+#+#+#+#+#+#+#+#+#
@@ -83,8 +83,9 @@ RUN mkdir /.local && chmod a+rwx /.local
 WORKDIR /media/notebooks
 EXPOSE 8888
 
+
 #+#+#+#+#+#+#+#+#+#+#+#
 # Startup script #
 #+#+#+#+#+#+#+#+#+#+#+#
-COPY ./container-files/startup.sh ./
+COPY ./container-files/startup.sh /root
 
