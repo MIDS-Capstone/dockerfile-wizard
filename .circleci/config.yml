@@ -26,7 +26,9 @@ jobs:
       - run:
           name: Generate full image name for new docker image
           command: |
+            rm -rf tracking
             mkdir tracking
+            
             set -x
             if [ "${CIRCLE_BRANCH}" == "master" ]
             then
