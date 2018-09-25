@@ -87,5 +87,5 @@ EXPOSE 8888
 #+#+#+#+#+#+#+#+#+#+#+#
 # Startup script #
 #+#+#+#+#+#+#+#+#+#+#+#
-COPY ./container-files/startup.sh ./root
+COPY ./container-files/startup.sh /root
 
