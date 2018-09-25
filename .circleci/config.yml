@@ -159,6 +159,12 @@ jobs:
             
 
       - run:
+          name: Install any testing dependencies
+          command: |
+            sudo apt-get install jq
+            chmod +x jq
+
+      - run:
           name: Test deployed application
           command: |
             # Wait for external ip to be assigned
