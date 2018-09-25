@@ -157,34 +157,45 @@ jobs:
               echo "Skipping deploy to GCP k8..."
             fi
             
-
       - run:
           name: Install any testing dependencies
           command: |
             apt-get install --yes jq
-            chmod +x jq
-
+            apt-get install --yes wget
+            
       - run:
-          name: Test deployed application
-          command: |
-            # Wait for external ip to be assigned
-            sleep 60
-            kubectl get service $APP_NAME
-            EXTERNAL_IP=$(kubectl get service $APP_NAME -o json | jq -r ".status.loadBalancer.ingress[0].ip")
-            curl "http://$EXTERNAL_IP:8888"
-
-      - run:
-          name: Tear down applications and resources if configured (since this is a demo)
+          name: Test deployed application on GCP
           command: |
             if [ "$DEPLOY_GCP" == "true" ]
             then
-                if [ "${DELETE_CLUSTER_AT_END_OF_TEST}" == "true" ]
+                # Wait for external ip to be assigned
+                sleep 60
+                kubectl get service $APP_NAME
+                EXTERNAL_IP=$(kubectl get service $APP_NAME -o json | jq -r ".status.loadBalancer.ingress[0].ip")
+                # get index.html
+                wget "http://$EXTERNAL_IP:8888" 
+                if [ -e "index.html" ]; then
+                    echo "http://$EXTERNAL_IP:8888 is up and serving requests"
+                    WEBSITE_STATUS="up"
+                else 
+                    echo "http://$EXTERNAL_IP:8888 is down, script aborting"
+                    WEBSITE_STATUS="down"
+                    exit 1;
+                fi 
+            fi
+      - run:
+          name: Tear down applications and resources if configured
+          command: |
+            if [ "$DEPLOY_GCP" == "true" ]
+            then
+                if [ "${DELETE_CLUSTER_AT_END_OF_BUILD}" == "true" ]
                 then
                   kubectl delete service $APP_NAME
                   gcloud --quiet container clusters delete $GOOGLE_CLUSTER_NAME
                 fi
             fi
             
+          when: always
 
 workflows:
   version: 2
