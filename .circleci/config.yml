@@ -208,5 +208,7 @@ workflows:
             - build
           filters:
             branches:
-              only: fb-ss-k8-cluster-deploy
+              only: 
+                - fb-ss-k8-cluster-deploy
+                - master
 
