@@ -68,7 +68,8 @@ RUN pip install --upgrade pip && \
     keras \
     imutils \
     pillow \
-    lxml
+    lxml \
+    mlflow
 
 		
 #+#+#+#+#+#+#+#+#+#+#+#
